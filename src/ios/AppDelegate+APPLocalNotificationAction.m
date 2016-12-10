@@ -34,4 +34,10 @@
     completionHandler();   
 }  
 
+- (void) application:(UIApplication *)application didReceiveLocalNotification:(nonnull UILocalNotification *)notification
+{
+    NSLog(@"Received local notification %@ while in the foreground, reposting", notification);
+    [[NSNotificationCenter defaultCenter] postNotificationName:CDVLocalNotification object:notification];
+}
+
  @end
