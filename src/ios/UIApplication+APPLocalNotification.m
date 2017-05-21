@@ -28,6 +28,7 @@
 
 NSMutableDictionary *allNotificationActions = nil;
 NSMutableDictionary *allNotificationCategories = nil;
+#define isNSNull(value) [value isKindOfClass:[NSNull class]]
 
 #pragma mark -
 #pragma mark Permissions
@@ -97,6 +98,17 @@ NSMutableDictionary *allNotificationCategories = nil;
         {
             for (NSString* interaction in interactions)
             {
+                // This version of the plugin supports notifications with actions
+                // but then is broken if there are no actions, because the array here
+                // is empty and returns NSNull objects. I am not quite sure why it 
+                // would return NSNull objects instead of just being a shorter array
+                // but it is what it is.
+                // we could always pass in category and zero length actions array from 
+                // the client, but that puts an unnecessary burden on the user
+                // just skipping the null interactions works too and is a nicer interface
+                if (isNSNull(interaction)) {
+                    continue;
+                }
                 NSData* interactionsData = [interaction dataUsingEncoding:NSUTF8StringEncoding];
                 NSDictionary* interactionsDict = [NSJSONSerialization JSONObjectWithData:interactionsData options:NSJSONReadingMutableContainers error:nil];
 
