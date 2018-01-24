@@ -365,6 +365,6 @@ exports.on = function (event, callback, scope) {
  * @param {Function} callback
  *      The function to be exec as callback
  */
-exports.un = function (event, callback) {
+exports.un = function (event, callback, scope) {
     this.core.un(event, callback, scope);
 };
