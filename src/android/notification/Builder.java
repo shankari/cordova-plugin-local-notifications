@@ -23,16 +23,20 @@
 
 package de.appplant.cordova.plugin.notification;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
+import java.util.List;
 import java.util.Random;
 
 import de.appplant.cordova.plugin.notification.Action;
@@ -42,6 +46,8 @@ import de.appplant.cordova.plugin.notification.Action;
  * notification specified by JSON object passed from JS side.
  */
 public class Builder {
+    private static final String DEFAULT_CHANNEL_ID = "LOCAL_NOTIFICATION_PLUGIN";
+    private static final String DEFAULT_CHANNEL_DESCRIPTION = "Notifications scheduled locally by the user";
 
     // Application context passed by constructor
     private final Context context;
@@ -126,8 +132,14 @@ public class Builder {
         style = new NotificationCompat.BigTextStyle()
                 .bigText(options.getText());
 
-        builder = new NotificationCompat.Builder(context)
-                .setDefaults(0)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createChannelIfNecessary();
+            builder = new NotificationCompat.Builder(context, DEFAULT_CHANNEL_ID);
+        } else {
+            builder = new NotificationCompat.Builder(context);
+        }
+
+        builder.setDefaults(0)
                 .setContentTitle(options.getTitle())
                 .setContentText(options.getText())
                 .setNumber(options.getBadgeNumber())
@@ -147,6 +159,30 @@ public class Builder {
         applyContentReceiver(builder);
 
         return new Notification(context, options, builder, triggerReceiver);
+    }
+
+    /**
+     *
+     */
+
+    private void createChannelIfNecessary() {
+        // only call on Android O and above
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            final NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            List<NotificationChannel> channels = notificationManager.getNotificationChannels();
+
+            for (int i = 0; i < channels.size(); i++) {
+                String id = channels.get(i).getId();
+                if (DEFAULT_CHANNEL_ID.equals(id)) {
+                    return;
+                }
+            }
+
+            NotificationChannel dChannel = new NotificationChannel(DEFAULT_CHANNEL_ID,
+                    DEFAULT_CHANNEL_DESCRIPTION, NotificationManager.IMPORTANCE_DEFAULT);
+            dChannel.enableVibration(true);
+            notificationManager.createNotificationChannel(dChannel);
+        }
     }
 
     /**
